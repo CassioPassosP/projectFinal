@@ -1,151 +1,63 @@
-import * as React from "react";
-const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
-
-title?;
-  description?;
-  action?;
-};
-
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-};
+// Lightweight toast state for Radix Toast (shadcn/ui) - pure JS version
+import { useEffect, useState } from "react";
 
 let count = 0;
+const genId = () => (++count).toString();
 
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER;
-  return count.toString();
-}
-
-toast;
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"];
-      toast;
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
-
-const addToRemoveQueue = (toastId) => {
-  if (toastTimeouts.has(toastId)) {
-    return;
-  }
-
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId);
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId);
-  }, TOAST_REMOVE_DELAY);
-
-  toastTimeouts.set(toastId, timeout);
+const listeners = [];
+const state = {
+  toasts: [],
 };
 
-export const reducer = (state)=> {
-  switch (action.type) {
-    case "ADD_TOAST", ...state.toasts].slice(0, TOAST_LIMIT),
-      };
-
-    case "UPDATE_TOAST",
-        toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } )),
-      };
-
-    case "DISMISS_TOAST"= action;
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId);
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
-        });
-      }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open),
-      };
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts;
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      };
-  }
-};
-
-const listeners: Array<(state) => void> = [];
-
-let memoryState= { toasts;
-
-function dispatch(action) {
-  memoryState = reducer(memoryState, action);
-  listeners.forEach((listener) => {
-    listener(memoryState);
-  });
+function notify() {
+  for (const l of listeners) l(state);
 }
 
-function toast({ ...props }) {
-  const id = genId();
+function add(toast) {
+  const t = { id: genId(), open: true, ...toast };
+  state.toasts = [...state.toasts, t];
+  notify();
+  return t.id;
+}
 
-  const update = (props) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast);
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId);
+function update(toastId, update) {
+  state.toasts = state.toasts.map((t) => (t.id === toastId ? { ...t, ...update } : t));
+  notify();
+}
 
-  dispatch({
-    type: "ADD_TOAST",
-    toast,
-      onOpenChange: (open) => {
-        if (!open) dismiss();
-      },
-    },
-  });
+function remove(toastId) {
+  state.toasts = state.toasts.filter((t) => t.id !== toastId);
+  notify();
+}
 
-  return {
-    id;
+function dismiss(toastId) {
+  if (toastId) {
+    update(toastId, { open: false });
+    // remove after exit animation (~1s)
+    setTimeout(() => remove(toastId), 1000);
+  } else {
+    state.toasts.forEach((t) => dismiss(t.id));
+  }
+}
+
+function toast(props) {
+  return add(props);
 }
 
 function useToast() {
-  const [state, setState] = React.useState(memoryState);
-
-  React.useEffect(() => {
-    listeners.push(setState);
+  const [data, setData] = useState(state);
+  useEffect(() => {
+    listeners.push(setData);
     return () => {
-      const index = listeners.indexOf(setState);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
+      const i = listeners.indexOf(setData);
+      if (i > -1) listeners.splice(i, 1);
     };
-  }, [state]);
+  }, []);
 
   return {
-    ...state,
+    ...data,
     toast,
-    dismiss: (toastId?) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss,
   };
 }
 

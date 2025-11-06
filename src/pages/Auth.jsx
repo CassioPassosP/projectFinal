@@ -1,72 +1,81 @@
 // @ts-nocheck
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import { TrendingUp, Wallet } from 'lucide-react';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/supabase"; // ✅ import corrigido
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
+import { Wallet } from "lucide-react";
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  // 🔧 Mantém states separados por aba para evitar interferência
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  // 🔹 LOGIN
   const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(email, password);
-    
+    const { error } = await signIn(loginEmail, loginPassword);
+
     if (error) {
       toast({
         title: "Erro ao fazer login",
-        description,
-        variant: "destructive"
+        description: error.message || "Verifique suas credenciais e tente novamente.",
+        variant: "destructive",
       });
     } else {
       toast({
         title: "Login realizado!",
-        description: "Bem-vindo de volta!"
+        description: "Bem-vindo de volta 👋",
       });
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
-    
+
     setLoading(false);
   };
 
+  // 🔹 CADASTRO
   const handleSignUp = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signUp(email, password, fullName);
-    
+    const { error } = await signUp(registerEmail, registerPassword, fullName);
+
     if (error) {
       toast({
         title: "Erro ao criar conta",
-        description,
-        variant: "destructive"
+        description: error.message || "Verifique os dados e tente novamente.",
+        variant: "destructive",
       });
     } else {
       toast({
         title: "Conta criada!",
-        description: "Você já pode fazer login."
+        description: "Verifique seu email para confirmar sua conta antes de fazer login.",
       });
-      navigate('/dashboard');
     }
-    
+
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--gradient-primary)' }}>
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: "var(--gradient-primary)" }}
+    >
       <div className="w-full max-w-md">
+        {/* 🔷 LOGO E TÍTULO */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm mb-4">
             <Wallet className="w-8 h-8 text-white" />
@@ -75,6 +84,7 @@ const Auth = () => {
           <p className="text-white/80">Sua jornada financeira começa aqui</p>
         </div>
 
+        {/* 🔶 CARD DE LOGIN/CADASTRO */}
         <Card>
           <CardHeader>
             <CardTitle>Bem-vindo</CardTitle>
@@ -87,42 +97,44 @@ const Auth = () => {
                 <TabsTrigger value="register">Cadastro</TabsTrigger>
               </TabsList>
 
+              {/* 🔹 Aba de Login */}
               <TabsContent value="login">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-login">Email</Label>
+                    <Label htmlFor="login-email">Email</Label>
                     <Input
-                      id="email-login"
+                      id="login-email"
                       type="email"
                       placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-login">Senha</Label>
+                    <Label htmlFor="login-password">Senha</Label>
                     <Input
-                      id="password-login"
+                      id="login-password"
                       type="password"
                       placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
                       required
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Entrando...' : 'Entrar'}
+                    {loading ? "Entrando..." : "Entrar"}
                   </Button>
                 </form>
               </TabsContent>
 
+              {/* 🔹 Aba de Cadastro */}
               <TabsContent value="register">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo</Label>
+                    <Label htmlFor="full-name">Nome Completo</Label>
                     <Input
-                      id="name"
+                      id="full-name"
                       type="text"
                       placeholder="Seu nome"
                       value={fullName}
@@ -131,30 +143,30 @@ const Auth = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email-register">Email</Label>
+                    <Label htmlFor="register-email">Email</Label>
                     <Input
-                      id="email-register"
+                      id="register-email"
                       type="email"
                       placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-register">Senha</Label>
+                    <Label htmlFor="register-password">Senha</Label>
                     <Input
-                      id="password-register"
+                      id="register-password"
                       type="password"
                       placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
                       required
                       minLength={6}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? 'Criando conta...' : 'Criar conta'}
+                    {loading ? "Criando conta..." : "Criar conta"}
                   </Button>
                 </form>
               </TabsContent>
